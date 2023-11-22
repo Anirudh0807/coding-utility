@@ -1,24 +1,24 @@
-import logo from './logo.svg';
-import './App.css';
-
+import React from "react";
+import { Route, BrowserRouter, Routes } from "react-router-dom";
+import CodeError from "./components/CodeError";
+import CodeExplain from "./components/CodeExplain";
+import CodeGenerator from "./components/CodeGenerator";
+import CodeHelper from "./components/CodeHelper";
+import Sidebar from "./components/Sidebar";
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <div className="flex">
+        <Sidebar />
+        <Routes>
+          <Route path="/" element={<CodeHelper />} />
+          <Route path="/code-error" element={<CodeError />} />
+          <Route path="/code-explain" element={<CodeExplain />} />
+          <Route path="/code-generator" element={<CodeGenerator />} />
+          <Route path="/code-helper" element={<CodeHelper />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }
 
