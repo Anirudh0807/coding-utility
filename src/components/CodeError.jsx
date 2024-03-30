@@ -1,10 +1,5 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import React, { useState } from "react";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
 
 function CodeError() {
   const [problemName, setProblemName] = useState("");
@@ -30,49 +25,54 @@ function CodeError() {
     setCode(e.target.value);
   };
 
-  const generateError = async () => {
+  const generateErrorGemini = async () => {
     if (problemName === "") {
       setError("Please Enter the problem Name");
       return;
     }
     if (lang === "") {
-        setError("Please Enter Language");
+      setError("Please Enter Language");
       return;
     }
     if (code === "") {
-        setError("Please Enter the code");
+      setError("Please Enter the code");
     }
     if (platform === "") {
-        setError("Please Enter the Platform Name");
+      setError("Please Enter the Platform Name");
       return;
     }
 
-    if (error != "") {
-        setError("");
+    if (error !== "") {
+      setError("");
     }
     setLoading(true);
-
+    
     try {
-      const response = await openai.completions.create({
-        model: "gpt-3.5-turbo-instruct",
-        prompt: `Examine the ${lang} code for the ${problemName} problem on ${platform}. If you identify any errors in the code, provide guidance on resolving them without changing the core logic. If the code is error-free, simply state that it should work correctly and give some suggestions to improve the efficiency of the code. Code: ${code}`,
-        temperature: 1,
-        max_tokens: 1000,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0,
-      });
+      const genAI = new GoogleGenerativeAI(
+        process.env.REACT_APP_GEMINI_API_KEY
+      );
 
-      setError(response.choices[0].text.trimStart());
+      const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+
+      const prompt = `Examine the ${lang} code for the ${problemName} problem on ${platform}. If you identify any errors in the code, provide guidance on resolving them without changing the core logic. If the code is error-free, simply state that it should work correctly and give some suggestions to improve the efficiency of the code. Code: ${code}`;
+
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const text = response.text();
+      console.log(text);
+      setError(text);
       setLoading(false);
-    } catch (e) {
-      console.error("Error generating code:", e);
+    } catch (error) {
+      setError("Error generating code. Please try again later");
+      setLoading(false);
     }
   };
 
   return (
     <div className="w-4/5 bg-main flex flex-col items-center justify-center h-screen">
-      <div className="text-4xl font-bold">Get The Errors For The Given Code</div>
+      <div className="text-4xl font-bold">
+        Get The Errors For The Given Code
+      </div>
       <div className="flex justify-center mt-5">
         <input
           type="text"
@@ -106,7 +106,7 @@ function CodeError() {
 
       <div className="justify-center flex flex-col items-center mt-5">
         <button
-          onClick={generateError}
+          onClick={generateErrorGemini}
           className="rounded-full px-4 py-4 justify-center bg-button shadow-lg hover:bg-blue-400"
         >
           Check for Errors

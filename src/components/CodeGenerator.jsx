@@ -1,11 +1,6 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import React, { useState } from "react";
-import OpenAI from "openai";
 import SyntaxHighlighter from "react-syntax-highlighter";
-
-const openai = new OpenAI({
-  apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
 
 function CodeGenerator() {
   const [problemName, setProblemName] = useState("");
@@ -26,7 +21,7 @@ function CodeGenerator() {
     setLang(e.target.value.toLowerCase());
   };
 
-  const generateCode = async () => {
+  const generateCodeGemini = async () => {
     if (problemName === "") {
       setCode("Please Enter the problem Name");
       return;
@@ -44,20 +39,23 @@ function CodeGenerator() {
     }
     setLoading(true);
     try {
-      const response = await openai.completions.create({
-        model: "gpt-3.5-turbo-instruct",
-        prompt: `You are a competitive coder. Give an optimal code for the the problem ${problemName} from ${platform} in ${lang}. Only give the code no need for explanation.`,
-        temperature: 1,
-        max_tokens: 1000,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0,
-      });
+      const genAI = new GoogleGenerativeAI(
+        process.env.REACT_APP_GEMINI_API_KEY
+      );
 
-      setCode(response.choices[0].text.trimStart());
+      const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+
+      const prompt = `You are a competitive coder. Give an optimal code for the the problem ${problemName} from ${platform} in ${lang}. Only give the code no need for explanation.`;
+
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const text = response.text();
+      console.log(text);
+      setCode(text);
       setLoading(false);
     } catch (error) {
-      console.error("Error generating code:", error);
+      setCode("Error generating code. Please try again later");
+      setLoading(false);
     }
   };
 
@@ -90,7 +88,7 @@ function CodeGenerator() {
 
       <div className="justify-center flex flex-col items-center mt-5">
         <button
-          onClick={generateCode}
+          onClick={generateCodeGemini}
           className="rounded-full px-4 py-4 justify-center bg-button shadow-lg hover:bg-blue-400"
         >
           Generate Code

@@ -1,12 +1,7 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import React, { useState } from "react";
-import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
-
-function CodeExplain({value}) {
+function CodeExplain({ value }) {
   const [lang, setLang] = useState("");
   const [code, setCode] = useState("");
   const [ans, setAns] = useState("");
@@ -18,9 +13,9 @@ function CodeExplain({value}) {
 
   const handleCode = (e) => {
     setCode(e.target.value);
-  }
+  };
 
-  const generateExplain = async () => {
+  const generateExplainGemini = async () => {
     if (lang === "") {
       setAns("Please Enter Language");
       return;
@@ -29,34 +24,39 @@ function CodeExplain({value}) {
       setAns("Please Enter the code");
     }
 
-    if (ans != "") {
+    if (ans !== "") {
       setAns("");
     }
     setLoading(true);
 
     try {
-      const response = await openai.completions.create({
-        model: "gpt-3.5-turbo-instruct",
-        prompt: `Please provide an explanation for the code ${code} written in ${lang}. Break down the code into simple steps and simplify any complex processes. Summarize the code's functionality and list the key points of the explanation.`,
-        temperature: 1,
-        max_tokens: 1000,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0,
-      });
+      const genAI = new GoogleGenerativeAI(
+        process.env.REACT_APP_GEMINI_API_KEY
+      );
 
-      setAns(response.choices[0].text.trimStart());
+      const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+
+      const prompt = `Please provide an explanation for the code ${code} written in ${lang}. Break down the code into simple steps and simplify any complex processes. Summarize the code's functionality and list the key points of the explanation.`;
+
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const text = response.text();
+      console.log(text);
+      setAns(text);
       setLoading(false);
     } catch (error) {
-      console.error("Error generating code:", error);
+      setAns("Error generating Response. Please Try again Later");
+      setLoading(false);
     }
   };
 
   return (
     <div className="w-4/5 bg-main flex flex-col items-center justify-center h-screen">
-      <div className="text-4xl font-bold">Get The Explanation For The Given Code</div>
+      <div className="text-4xl font-bold">
+        Get The Explanation For The Given Code
+      </div>
       <div className="flex justify-center mt-5">
-      <input
+        <input
           type="text"
           placeholder="Enter the code"
           value={code}
@@ -74,7 +74,7 @@ function CodeExplain({value}) {
 
       <div className="justify-center flex flex-col items-center mt-5">
         <button
-          onClick={generateExplain}
+          onClick={generateExplainGemini}
           className="rounded-full px-4 py-4 justify-center bg-button shadow-lg hover:bg-blue-400"
         >
           Explain
